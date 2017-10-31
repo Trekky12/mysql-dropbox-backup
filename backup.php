@@ -14,7 +14,7 @@ $type = '';
 if (defined('STDIN')) {
   $type = $argv[1].'.';
 }
-$settings = require 'config.'.$type.'.php';
+$settings = require 'config.'.$type.'php';
 
 $folder = '';
 $prefix = 'backup_'.$settings['mysql']['database'].'_';
