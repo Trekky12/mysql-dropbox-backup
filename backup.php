@@ -18,7 +18,7 @@ $settings = require 'config.'.$type.'php';
 
 $folder = '';
 $prefix = '';
-$suffix = '_backup_'.$settings['mysql']['database'].'_';
+$suffix = '_backup_'.$settings['mysql']['database'];
 
 $sqlFileName    = $prefix.date('Y_m_d_H-i-s').$suffix.".sql";
 $sqlFile        = $folder.$sqlFileName;
