@@ -17,11 +17,12 @@ if (defined('STDIN')) {
 $settings = require 'config.'.$type.'php';
 
 $folder = '';
-$prefix = 'backup_'.$settings['mysql']['database'].'_';
+$prefix = '';
+$suffix = '_backup_'.$settings['mysql']['database'].'_';
 
-$sqlFileName    = $prefix.date('Y_m_d_H-i-s').".sql";
+$sqlFileName    = $prefix.date('Y_m_d_H-i-s').$suffix.".sql";
 $sqlFile        = $folder.$sqlFileName;
-$zipFileName    = $prefix.date('Y_m_d_H-i-s').".zip";
+$zipFileName    = $prefix.date('Y_m_d_H-i-s').$suffix.".zip";
 $zipFile        = $folder.$zipFileName;
 
 $createSQLBackup   = "mysqldump -h ".$settings['mysql']['host']." -u ".$settings['mysql']['user']." --password='".$settings['mysql']['password']."' ".$settings['mysql']['database']." > ".$sqlFile." 2>&1";
