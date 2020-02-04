@@ -11,7 +11,7 @@ use Kunnu\Dropbox\Exceptions\DropboxClientException;
 date_default_timezone_set('Europe/Berlin');
 
 $type = '';
-if (defined('STDIN')) {
+if (defined('STDIN') && count($argv) > 1) {
   $type = $argv[1].'.';
 }
 $settings = require 'config.'.$type.'php';
