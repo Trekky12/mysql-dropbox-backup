@@ -1,6 +1,5 @@
 <?php
 
-// Autoload
 require __DIR__ . '/vendor/autoload.php';
 
 use Kunnu\Dropbox\Dropbox;
@@ -12,54 +11,92 @@ date_default_timezone_set('Europe/Berlin');
 
 $type = '';
 if (defined('STDIN') && count($argv) > 1) {
-  $type = $argv[1].'.';
+    $type = $argv[1] . '.';
 }
-$settings = require 'config.'.$type.'php';
+$settings = require 'config.' . $type . 'php';
 
-$folder = '';
-$prefix = '';
-$suffix = '_backup_'.$settings['mysql']['database'];
+$folder = $settings['folder'];
+$prefix = $settings['prefix'];
+$suffix = $settings['suffix'];
 
-$sqlFileName    = $prefix.date('Y_m_d_H-i-s').$suffix.".sql";
-$sqlFile        = $folder.$sqlFileName;
-$zipFileName    = $prefix.date('Y_m_d_H-i-s').$suffix.".zip";
-$zipFile        = $folder.$zipFileName;
-
-$createSQLBackup   = "mysqldump -h ".$settings['mysql']['host']." -u ".$settings['mysql']['user']." --password='".$settings['mysql']['password']."' ".$settings['mysql']['database']." > ".$sqlFile." 2>&1";
-$createZipBackup = "zip -P ".$settings['zip_password']." $zipFile $sqlFile";
-
-try {
-    exec($createSQLBackup);
-    system($createZipBackup);
-} catch (Exception $e) {
-    echo "Failed to create Backup or ZIP: " . $e->getMessage() . "\n";
-}
-
-//Configure Dropbox Application
 $app = new DropboxApp($settings['dropbox']['client_id'], $settings['dropbox']['client_secret'], $settings['dropbox']['access_token']);
-
-//Configure Dropbox service
 $dropbox = new Dropbox($app);
 
-try {
-    // Create Dropbox File from Path
-    $dropboxFile = new DropboxFile($zipFile);
+/**
+ * Create SQL Backup and zip
+ */
+if (array_key_exists('mysql', $settings)) {
+    $fileSQLName = $folder . $prefix . date('Y_m_d_H-i-s') . $suffix . ".sql";
+    $fileZipSQLName = $prefix . date('Y_m_d_H-i-s') . $suffix . ".zip";
+    $fileZipSQLPath = $folder . $fileZipSQLName;
 
-    // Upload the file to Dropbox
-    $uploadedFile = $dropbox->upload($dropboxFile, "/" . $zipFileName, ['autorename' => true]);
+    $createSQLBackup = "mysqldump -h " . $settings['mysql']['host'] . " -u " . $settings['mysql']['user'] . " --password='" . $settings['mysql']['password'] . "' " . $settings['mysql']['database'] . " > " . $fileSQLName . " 2>&1";
+    $createZipSQLBackup = "zip -P " . $settings['zip_password'] . " $fileZipSQLPath $fileSQLName";
 
-    //echo $uploadedFile->getPathDisplay();
-    
-} catch (DropboxClientException $e) {
-    echo $e->getMessage();
+    try {
+        exec($createSQLBackup);
+        system($createZipSQLBackup);
+    } catch (Exception $e) {
+        echo "Failed to create Backup or ZIP: " . $e->getMessage() . "\n";
+    }
+
+    /**
+     * Upload SQL Zip
+     */
+    try {
+        $fileZipSQLDropbox = new DropboxFile($fileZipSQLPath);
+        $fileZipSQLDropboxUploaded = $dropbox->upload($fileZipSQLDropbox, "/" . $fileZipSQLName, ['autorename' => true]);
+
+        //echo $fileZipSQLDropboxUploaded->getPathDisplay();
+    } catch (DropboxClientException $e) {
+        echo $e->getMessage();
+    }
+
+
+    /**
+     * Delete the temporary files
+     */
+    try {
+        unset($fileZipSQLDropbox);
+        unlink($fileSQLName);
+        unlink($fileZipSQLPath);
+    } catch (Exception $e) {
+        echo "Failed to unlink Backup temporary file: " . $e->getMessage() . "\n";
+    }
 }
 
+/**
+ * Create other files zip
+ */
+if (array_key_exists('files', $settings) && !empty($settings['files'])) {
+    $fileZipOtherFilesName = $prefix . date('Y_m_d_H-i-s') . $suffix . ".zip";
+    $fileZipOtherFilesPath = $folder . $fileZipOtherFilesName;
 
-// Delete the temporary files
-try {
-    unset($dropboxFile);
-    unlink($sqlFile);
-    unlink($zipFile);
-} catch (Exception $e) {
-    echo "Failed to unlink Backup temporary file: " . $e->getMessage() . "\n";
+    $createZipOtherFilesBackup = "zip -P " . $settings['zip_password'] . " -r $fileZipOtherFilesPath " . implode(" ", $settings['files']);
+
+    try {
+        system($createZipOtherFilesBackup);
+    } catch (Exception $e) {
+        echo "Failed to create ZIP of folders: " . $e->getMessage() . "\n";
+    }
+
+    /**
+     * Upload other files zip
+     */
+    try {
+        $fileZipOtherFilesDropbox = new DropboxFile($fileZipOtherFilesPath);
+        $fileZipOtherFilesDropboxUploaded = $dropbox->upload($fileZipOtherFilesDropbox, "/" . $fileZipOtherFilesName, ['autorename' => true]);
+    } catch (DropboxClientException $e) {
+        echo $e->getMessage();
+    }
+
+    /**
+     * Delete the temporary files
+     */
+    try {
+        unset($fileZipOtherFilesDropbox);
+        unlink($fileZipOtherFilesPath);
+    } catch (Exception $e) {
+        echo "Failed to unlink Backup temporary file: " . $e->getMessage() . "\n";
+    }
 }
