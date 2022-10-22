@@ -22,16 +22,25 @@ $suffix = $settings['suffix'];
 $app = new DropboxApp($settings['dropbox']['client_id'], $settings['dropbox']['client_secret'], $settings['dropbox']['access_token']);
 $dropbox = new Dropbox($app);
 
+$fileExtension = ".zip";
+if (`which 7z`) {
+    $fileExtension = ".7z";
+}
+
 /**
  * Create SQL Backup and zip
  */
 if (array_key_exists('mysql', $settings)) {
     $fileSQLName = $folder . $prefix . date('Y_m_d_H-i-s') . $suffix . ".sql";
-    $fileZipSQLName = $prefix . date('Y_m_d_H-i-s') . $suffix . ".zip";
+    $fileZipSQLName = $prefix . date('Y_m_d_H-i-s') . $suffix . $fileExtension;
     $fileZipSQLPath = $folder . $fileZipSQLName;
 
     $createSQLBackup = "mysqldump -h " . $settings['mysql']['host'] . " -u " . $settings['mysql']['user'] . " --password='" . $settings['mysql']['password'] . "' " . $settings['mysql']['database'] . " > " . $fileSQLName . " 2>&1";
-    $createZipSQLBackup = "zip -P " . $settings['zip_password'] . " $fileZipSQLPath $fileSQLName";
+    if (`which 7z`) {
+        $createZipSQLBackup = "7z a -t7z -p" . $settings['zip_password'] . " -mhe -r -spf2 $fileZipSQLPath $fileSQLName";
+    } else {
+        $createZipSQLBackup = "zip -P " . $settings['zip_password'] . " $fileZipSQLPath $fileSQLName";
+    }
 
     try {
         exec($createSQLBackup);
@@ -63,16 +72,21 @@ if (array_key_exists('mysql', $settings)) {
     } catch (Exception $e) {
         echo "Failed to unlink Backup temporary file: " . $e->getMessage() . "\n";
     }
+
 }
 
 /**
  * Create other files zip
  */
 if (array_key_exists('files', $settings) && !empty($settings['files'])) {
-    $fileZipOtherFilesName = $prefix . date('Y_m_d_H-i-s') . $suffix . ".zip";
+    $fileZipOtherFilesName = $prefix . date('Y_m_d_H-i-s') . $suffix . $fileExtension;
     $fileZipOtherFilesPath = $folder . $fileZipOtherFilesName;
 
-    $createZipOtherFilesBackup = "zip -P " . $settings['zip_password'] . " -r $fileZipOtherFilesPath " . implode(" ", $settings['files']);
+    if(`which 7z`){
+        $createZipOtherFilesBackup = "7z a -t7z -p" . $settings['zip_password'] . " -mhe -r -spf2 $fileZipOtherFilesPath " . implode(" ", $settings['files']);
+    } else {
+        $createZipOtherFilesBackup = "zip -P " . $settings['zip_password'] . " -r $fileZipOtherFilesPath " . implode(" ", $settings['files']);
+    }
 
     try {
         system($createZipOtherFilesBackup);
