@@ -1,7 +1,8 @@
 <?php
 
 return [
-    'mysql' => [
+    'database' => [
+        'type' => 'mysql',
         'user' => '',
         'password' => '',
         'database' => '',

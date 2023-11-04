@@ -30,12 +30,17 @@ if (`which 7z`) {
 /**
  * Create SQL Backup and zip
  */
-if (array_key_exists('mysql', $settings)) {
+if (array_key_exists('database', $settings) && array_key_exists('type', $settings['database']) && in_array($settings['database']['type'], ['mysql', 'sqlite'])) {
     $fileSQLName = $folder . $prefix . date('Y_m_d_H-i-s') . $suffix . ".sql";
     $fileZipSQLName = $prefix . date('Y_m_d_H-i-s') . $suffix . $fileExtension;
     $fileZipSQLPath = $folder . $fileZipSQLName;
 
-    $createSQLBackup = "mysqldump -h " . $settings['mysql']['host'] . " -u " . $settings['mysql']['user'] . " --password='" . $settings['mysql']['password'] . "' " . $settings['mysql']['database'] . " > " . $fileSQLName . " 2>&1";
+    if ($settings['database']['type'] == 'mysql') {
+        $createSQLBackup = "mysqldump -h " . $settings['database']['host'] . " -u " . $settings['database']['user'] . " --password='" . $settings['database']['password'] . "' " . $settings['database']['database'] . " > " . $fileSQLName . " 2>&1";
+    } else if ($settings['database']['type'] == 'sqlite') {
+        $createSQLBackup = "sqlite3 " . $settings['database']['database'] . " '.backup " . $fileSQLName . "' 2>&1";
+    }
+
     if (`which 7z`) {
         $createZipSQLBackup = "7z a -t7z -p" . $settings['zip_password'] . " -mhe -r -spf2 $fileZipSQLPath $fileSQLName";
     } else {
