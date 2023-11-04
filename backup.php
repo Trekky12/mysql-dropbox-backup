@@ -30,6 +30,11 @@ if (array_key_exists('database', $settings) && array_key_exists('type', $setting
         $createSQLBackup = "sqlite3 " . $settings['database']['database'] . " '.backup " . $fileSQLName . "' 2>&1";
     }
 
+    // Docker
+    if (array_key_exists('docker', $settings) && array_key_exists('container_name', $settings['docker']) && !empty($settings['docker']['container_name'])) {
+        $createSQLBackup = "docker exec -it " . $settings['docker']['container_name'] . " " . $createSQLBackup;
+    }
+
     try {
         // Create backup
         exec($createSQLBackup);

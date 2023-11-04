@@ -8,8 +8,10 @@ return [
         'database' => '',
         'host' => 'localhost'
     ],
-    'files' => [
+    'docker' => [
+        'container_name' => ''
     ],
+    'files' => [],
     'dropbox' => [
         'client_id' => '',
         'client_secret' => '',
