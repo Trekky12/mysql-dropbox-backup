@@ -22,7 +22,7 @@ $files = [];
  * Create SQL Backup and zip
  */
 if (array_key_exists('database', $settings) && array_key_exists('type', $settings['database']) && in_array($settings['database']['type'], ['mysql', 'sqlite'])) {
-    $fileSQLName = $folder . "database.sql";
+    $fileSQLName = $folder . "database". ($settings['database']['type'] == 'sqlite' ? '.db' : '.sql');
 
     if ($settings['database']['type'] == 'mysql') {
         $createSQLBackup = "mysqldump -h " . $settings['database']['host'] . " -u " . $settings['database']['user'] . " --password='" . $settings['database']['password'] . "' " . $settings['database']['database'] . " > " . $fileSQLName . " 2>&1";
